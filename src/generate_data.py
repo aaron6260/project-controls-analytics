@@ -8,15 +8,13 @@ from tkinter.font import names
 import numpy as np
 import pandas as pd
 
-## defining variables
-NUM_PROJECTS = 200
-NUM_CLIENTS = 25
-START_YEAR = 2021
-END_YEAR = 2025
+from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, END_YEAR, RANDOM_SEED
+from config.clients import INDUSTRY_CONFIG, CLIENT_PREFIXES, CLIENT_SUFFIXES
+from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS, STATUS_DISTRIBUTION
 
 ## Setting deterministic randomness for reproducability
-random.seed(42)
-np.random.seed(42)
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
 
 def generate_clients(num_clients=NUM_CLIENTS):
     """
@@ -31,28 +29,25 @@ def generate_clients(num_clients=NUM_CLIENTS):
     pandas.DataFrame
         DataFrame contains client IDs, client names, and industries.
     """
-
-    industries = ['Technology', 'Healthcare', 'Utilities', 'Retail', 'Manufacturing', 'Agriculture', 'Education', 'Transportation', 'Energy', 'Telecommunications']
-    industry_probabilities = [10,10,15,3,20,1,5,5,30,1] #Probabilities for each industry totaling to 100.
-    client_prefixes = ['Blue', 'Alpha', 'Legacy', 'NextGen', 'Pinnacle', 'Summit', 'Vertex', 'Horizon', 'Apex', 'Zenith']
-    client_suffixes = ['Solutions', 'Systems', 'Technologies', 'Enterprises', 'Industries', 'Dynamics', 'Innovations', 'Global', 'Networks', 'Partners']
     used_names = set() #A set ensures unique client names, no duplicates.
     client_names = []
     while len(client_names) < num_clients:
-        temporary_name = f"{random.choice(client_prefixes)} {random.choice(client_suffixes)}"
+        temporary_name = f"{random.choice(CLIENT_PREFIXES)} {random.choice(CLIENT_SUFFIXES)}"
         if temporary_name not in used_names: #checks that the newly generated name is unique before adding it to the list. 
             used_names.add(temporary_name) #add unique name to set. Unordered collection, so random.seed won't work properly. 
             client_names.append(temporary_name) #adding to list because it will preserve the order of generation, which is important for reproducibility.
     data = {
         'client_id': range(1, num_clients + 1),
         'client_name': client_names,
-        'industry': random.choices(industries, weights=industry_probabilities, k=num_clients)
+        #'industry': random.choices(INDUSTRIES, weights=INDUSTRY_WEIGHTS, k=num_clients)
+        'industry': random.choices(list(INDUSTRY_CONFIG.keys()), weights=list(INDUSTRY_CONFIG.values()), k=num_clients)
     }
     clients_df = pd.DataFrame(data)
     return clients_df
 
-def generate_projects():
-    pass
+def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
+    projects_df = None
+    return projects_df
 
 def generate_monthly_costs():
     pass
@@ -67,8 +62,8 @@ def save_csvs():
     pass
 
 def main():
-    clients = generate_clients()
-    print(clients.head())
+    clients = generate_clients(num_clients=NUM_CLIENTS)
+    print(clients)
 #    generate_projects()
 #    generate_monthly_costs()
 #    generate_change_orders()
