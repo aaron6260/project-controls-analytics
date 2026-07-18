@@ -36,12 +36,13 @@ def generate_clients(num_clients=NUM_CLIENTS):
     industry_probabilities = [10,10,15,3,20,1,5,5,30,1] #Probabilities for each industry totaling to 100.
     client_prefixes = ['Blue', 'Alpha', 'Legacy', 'NextGen', 'Pinnacle', 'Summit', 'Vertex', 'Horizon', 'Apex', 'Zenith']
     client_suffixes = ['Solutions', 'Systems', 'Technologies', 'Enterprises', 'Industries', 'Dynamics', 'Innovations', 'Global', 'Networks', 'Partners']
-#    client_names = [f"{random.choice(client_prefixes)} {random.choice(client_suffixes)}" for _ in range(num_clients)]
-    names = set() #Ensures unique client names, no duplicates. 
-    while len(names) < num_clients:
-        name = f"{random.choice(client_prefixes)} {random.choice(client_suffixes)}"
-        names.add(name)
-    client_names = list(names) #Convert the set into a list for DataFrame creation. 
+    used_names = set() #A set ensures unique client names, no duplicates.
+    client_names = []
+    while len(client_names) < num_clients:
+        temporary_name = f"{random.choice(client_prefixes)} {random.choice(client_suffixes)}"
+        if temporary_name not in used_names: #checks that the newly generated name is unique before adding it to the list. 
+            used_names.add(temporary_name) #add unique name to set. Unordered collection, so random.seed won't work properly. 
+            client_names.append(temporary_name) #adding to list because it will preserve the order of generation, which is important for reproducibility.
     data = {
         'client_id': range(1, num_clients + 1),
         'client_name': client_names,
