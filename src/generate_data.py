@@ -22,7 +22,7 @@ def generate_clients(num_clients=NUM_CLIENTS):
     Parameters
     ----------
     num_clients : int
-        Number of client records to generate. Default is 25 based on variables above.
+        Number of client records to generate. Default is 25 based on variables in general.py.
 
     Returns
     -------
@@ -47,12 +47,40 @@ def generate_clients(num_clients=NUM_CLIENTS):
     return clients_df
 
 def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
-    projects_df = None
+    """
+    Generate a synthetic project table. 
+    Parameters
+    ----------
+    num_projects : int
+        Number of project records to generate. Default is 200 based on variables in general.py.
+    dlients_df : DataFrame
+        DataFrame returned from generate_clients function. 
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame contains project IDs, client IDs, industries, project type, original budget, and duration in months.
+    """
     data = {
         'project_id': range(1, num_projects + 1),
-        'client_id': random.choices(clients_df['client_id'], k=num_projects),
-        
+        'client_id': random.choices(clients_df['client_id'], weights=clients_df['business_scale'], k=num_projects),
     }
+    projects_df = pd.DataFrame(data)
+    projects_df = projects_df.merge(clients_df[['client_id', 'industry']], on='client_id', how='left')
+    project_type_list = list()
+    original_budget_list = list()
+    duration_months_list = list()
+    for industry in projects_df['industry']:
+        available_templates = PROJECT_CATALOG[industry]
+        project_type = random.choice(list(available_templates.keys()))
+        original_budget = random.uniform(*available_templates[project_type]['budget_range'])
+        duration_months = random.randint(*available_templates[project_type]['duration_months_range'])
+        project_type_list.append(project_type)
+        original_budget_list.append(original_budget)
+        duration_months_list.append(duration_months)
+    projects_df['project_type'] = project_type_list
+    projects_df['original_budget'] = original_budget_list
+    projects_df['duration_months'] = duration_months_list
     return projects_df
 
 def generate_monthly_costs():
@@ -70,7 +98,8 @@ def save_csvs():
 def main():
     clients = generate_clients(num_clients=NUM_CLIENTS)
     #print(clients)
-#    generate_projects()
+    projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
+    print(projects)
 #    generate_monthly_costs()
 #    generate_change_orders()
 #    generate_forecast_history()
