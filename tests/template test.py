@@ -204,7 +204,7 @@ print(sub_project_budget)
 #print(project_type)
 # Possible output: "Solar Farm"
 
-## When needing to refractor multiple lists into one dictionary. 
+## When needing to refactor multiple lists into one dictionary. 
 #projects = {
 #    'project_type': project_type
 #    'budget': budget

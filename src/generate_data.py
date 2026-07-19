@@ -67,7 +67,7 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     }
     projects_df = pd.DataFrame(data)
     projects_df = projects_df.merge(clients_df[['client_id', 'industry']], on='client_id', how='left')
-    project_type_list = list()
+    project_type_list = list()  #will need to refactor multiple lists into one dictionary when lists become too long. 
     original_budget_list = list()
     duration_months_list = list()
     for industry in projects_df['industry']:
