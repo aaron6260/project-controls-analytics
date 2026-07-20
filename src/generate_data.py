@@ -97,9 +97,9 @@ def save_csvs():
 
 def main():
     clients = generate_clients(num_clients=NUM_CLIENTS)
-    #print(clients)
+    print(clients.head())
     projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
-    print(projects)
+    print(projects.head())
 #    generate_monthly_costs()
 #    generate_change_orders()
 #    generate_forecast_history()
