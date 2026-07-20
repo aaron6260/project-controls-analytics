@@ -3,18 +3,29 @@
 ## Adding necessary imports
 import random 
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from tkinter.font import names
 
 import numpy as np
 import pandas as pd
 
-from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, END_YEAR, RANDOM_SEED
+from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, END_YEAR, RANDOM_SEED, SIMULATION_DATE
 from config.clients import INDUSTRY_CONFIG, CLIENT_PREFIXES, CLIENT_SUFFIXES, CLIENT_SIZE_CONFIG
 from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS, STATUS_DISTRIBUTION
 
 ## Setting deterministic randomness for reproducability
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
+
+def generate_dates(duration_months=1, start=START_YEAR, end=END_YEAR):
+    min_date = datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d")
+    max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
+    delta_total = max_date - min_date
+    random_start_days = random.randint(0, delta_total.days)
+    #start_date, end_date = 0, 0
+    start_date = min_date + timedelta(days=random_start_days)
+    end_date = start_date + relativedelta(months=duration_months)
+    return start_date, end_date
 
 def generate_clients(num_clients=NUM_CLIENTS):
     """
@@ -70,6 +81,8 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     project_type_list = list()  #will need to refactor multiple lists into one dictionary when lists become too long. 
     original_budget_list = list()
     duration_months_list = list()
+    start_date_list = list()
+    end_date_list = list()
     for industry in projects_df['industry']:
         available_templates = PROJECT_CATALOG[industry]
         project_type = random.choice(list(available_templates.keys()))
@@ -81,6 +94,11 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     projects_df['project_type'] = project_type_list
     projects_df['original_budget'] = original_budget_list
     projects_df['duration_months'] = duration_months_list
+    for duration in projects_df['duration_months']:
+        start_date, end_date = generate_dates(projects_df['duration_months'][duration])
+        start_date_list.append(start_date)
+        end_date_list.append(end_date)
+    projects_df['start_date'], projects_df['end_date'] = start_date_list, end_date_list
     return projects_df
 
 def generate_monthly_costs():
@@ -100,6 +118,7 @@ def main():
     print(clients.head())
     projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
     print(projects.head())
+    generate_dates()
 #    generate_monthly_costs()
 #    generate_change_orders()
 #    generate_forecast_history()
