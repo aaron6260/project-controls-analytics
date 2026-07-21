@@ -17,15 +17,27 @@ from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS, STATUS_D
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
-def generate_dates(duration_months=1, start=START_YEAR, end=END_YEAR):
+def generate_dates(duration_months=1):
+    """
+    Generate random start and end dates.
+    Parameters
+    ----------
+    duration_months = int
+        duration of project. Used to calculate end date. 
+    
+    Returns
+    -------
+    start_date, end_date
+        date tuple for random start date and finish date based on duration length. 
+
+    """
     min_date = datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d")
     max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
     delta_total = max_date - min_date
     random_start_days = random.randint(0, delta_total.days)
-    #start_date, end_date = 0, 0
     start_date = min_date + timedelta(days=random_start_days)
     end_date = start_date + relativedelta(months=duration_months)
-    return start_date, end_date
+    return start_date.date(), end_date.date()
 
 def generate_clients(num_clients=NUM_CLIENTS):
     """
@@ -70,7 +82,7 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     Returns
     -------
     pandas.DataFrame
-        DataFrame contains project IDs, client IDs, industries, project type, original budget, and duration in months.
+        DataFrame contains project IDs, client IDs, industries, project type, original budget, duration in months, start_date, and end_date
     """
     data = {
         'project_id': range(1, num_projects + 1),
@@ -95,10 +107,14 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     projects_df['original_budget'] = original_budget_list
     projects_df['duration_months'] = duration_months_list
     for duration in projects_df['duration_months']:
-        start_date, end_date = generate_dates(projects_df['duration_months'][duration])
+        start_date, end_date = generate_dates(duration)
         start_date_list.append(start_date)
         end_date_list.append(end_date)
     projects_df['start_date'], projects_df['end_date'] = start_date_list, end_date_list
+    # Sanity checks
+    assert len(projects_df) == NUM_PROJECTS
+    assert (projects_df['end_date'] >= projects_df['start_date']).all()
+    assert projects_df['duration_months'].between(3, 60).all()
     return projects_df
 
 def generate_monthly_costs():
