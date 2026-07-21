@@ -17,29 +17,6 @@ from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
-def generate_project_dates(duration_months=1):
-    """
-    Generate random start and end dates.
-    Parameters
-    ----------
-    duration_months = int
-        duration of project. Used to calculate end date. 
-    
-    Returns
-    -------
-    start_date, end_date
-        date tuple for random start date and finish date based on duration length. 
-
-    """
-    min_date = datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d")
-    #max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
-    max_date = SIMULATION_DATE + relativedelta(months=PLANNING_HORIZON_MONTHS) #Updated to have future planned projects
-    delta_total = max_date - min_date
-    random_start_days = random.randint(0, delta_total.days)
-    start_date = min_date + timedelta(days=random_start_days)
-    end_date = start_date + relativedelta(months=duration_months)
-    return start_date.date(), end_date.date()
-
 def generate_clients(num_clients=NUM_CLIENTS):
     """
     Generate a synthetic client table. 
@@ -74,6 +51,29 @@ def generate_clients(num_clients=NUM_CLIENTS):
     assert len(clients_df) == num_clients
     return clients_df
 
+def generate_project_dates(duration_months=1):
+    """
+    Generate random start and end dates.
+    Parameters
+    ----------
+    duration_months = int
+        duration of project. Used to calculate end date. 
+    
+    Returns
+    -------
+    start_date, end_date
+        date tuple for random start date and finish date based on duration length. 
+
+    """
+    min_date = datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d")
+    #max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
+    max_date = SIMULATION_DATE + relativedelta(months=PLANNING_HORIZON_MONTHS) #Updated to have future planned projects
+    delta_total = max_date - min_date
+    random_start_days = random.randint(0, delta_total.days)
+    start_date = min_date + timedelta(days=random_start_days)
+    end_date = start_date + relativedelta(months=duration_months)
+    return start_date.date(), end_date.date()
+
 def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     """
     Generate a synthetic project table. 
@@ -96,14 +96,14 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     }
     projects_df = pd.DataFrame(data)
     projects_df = projects_df.merge(clients_df[['client_id', 'industry']], on='client_id', how='left')
-    project_type_list = list()  #will need to refactor multiple lists into one dictionary when it makes sense. 
-    original_budget_list = list()
-    duration_months_list = list()
-    start_date_list = list()
-    end_date_list = list()
-    status_list = list()
-    region_list = list()
-    state_list = list()
+    project_type_list = []  #will need to refactor multiple lists into one dictionary when it makes sense. 
+    original_budget_list = []
+    duration_months_list = []
+    start_date_list = []
+    end_date_list = []
+    status_list = []
+    region_list = []
+    state_list = []
     # Generate a project and add to project_df. 
     # Assign a random template to each project based on the industry of the client and derive needed values for DataFrame. 
     for industry in projects_df['industry']:
@@ -141,7 +141,17 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     assert projects_df['duration_months'].between(3, 60).all()
     return projects_df
 
-def generate_monthly_costs():
+def generate_project_schedule(start_date=datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d"), duration=1):
+    
+    pass
+
+def generate_monthly_costs(project_df=None, cost_var=0.10):
+    assert not project_df['project_id'].empty
+    assert not project_df['duration_months'].empty
+    project_ids = []
+    for project in project_df['project_id']:
+            temp_date = project_df['start_date']
+
     pass
 
 def generate_change_orders():
