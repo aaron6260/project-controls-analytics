@@ -63,10 +63,12 @@ def generate_clients(num_clients=NUM_CLIENTS):
     data = {
         'client_id': range(1, num_clients + 1),
         'client_name': client_names,
+        # probabilistically assign industries and client sizes to client ids. 
         'industry': random.choices(list(INDUSTRY_CONFIG.keys()), weights=[v['weight'] for v in INDUSTRY_CONFIG.values()], k=num_clients),
         'client_size': random.choices(list(CLIENT_SIZE_CONFIG.keys()), weights=[v['probability'] for v in CLIENT_SIZE_CONFIG.values()], k=num_clients),
     }
     clients_df = pd.DataFrame(data)
+    # assign a business scaling factor for each client to be used later based on their size.
     clients_df['business_scale'] = clients_df.apply(lambda row: random.uniform(*CLIENT_SIZE_CONFIG[row['client_size']]['business_scale_range']), axis=1)
     return clients_df
 
@@ -83,19 +85,22 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     Returns
     -------
     pandas.DataFrame
-        DataFrame contains project IDs, client IDs, industries, project type, original budget, duration in months, start_date, and end_date
+        DataFrame contains project IDs, client IDs, industries, project type, original budget, duration in months, start_date, end_date, status
     """
     data = {
         'project_id': range(1, num_projects + 1),
+        # Probabilistically assign projects to clients. Larger clients are more likely to receive projects. 
         'client_id': random.choices(clients_df['client_id'], weights=clients_df['business_scale'], k=num_projects),
     }
     projects_df = pd.DataFrame(data)
     projects_df = projects_df.merge(clients_df[['client_id', 'industry']], on='client_id', how='left')
-    project_type_list = list()  #will need to refactor multiple lists into one dictionary when lists become too long. 
+    project_type_list = list()  #will need to refactor multiple lists into one dictionary when it makes sense. 
     original_budget_list = list()
     duration_months_list = list()
     start_date_list = list()
     end_date_list = list()
+    status_list = list()
+    # Assign a random template to each project based on the industry of the client. 
     for industry in projects_df['industry']:
         available_templates = PROJECT_CATALOG[industry]
         project_type = random.choice(list(available_templates.keys()))
@@ -111,7 +116,13 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
         start_date, end_date = generate_dates(duration)
         start_date_list.append(start_date)
         end_date_list.append(end_date)
-    projects_df['start_date'], projects_df['end_date'] = start_date_list, end_date_list
+        if start_date > SIMULATION_DATE.date():
+            status_list.append('Planned')
+        elif end_date <= SIMULATION_DATE.date():
+            status_list.append('Completed')
+        else:
+            status_list.append('Active')
+    projects_df['start_date'], projects_df['end_date'], projects_df['status'] = start_date_list, end_date_list, status_list
     # Sanity checks
     assert len(projects_df) == num_projects
     assert (projects_df['end_date'] >= projects_df['start_date']).all()

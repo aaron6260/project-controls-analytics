@@ -1,5 +1,6 @@
 # Configuration file for clients.
 
+# Assigning weights to different industries to adjust probabilities.
 INDUSTRY_CONFIG = {
     "Technology": {"weight": 10},
     "Healthcare": {"weight": 10},
@@ -16,6 +17,7 @@ INDUSTRY_CONFIG = {
 CLIENT_PREFIXES = ['Blue', 'Alpha', 'Legacy', 'NextGen', 'Pinnacle', 'Summit', 'Vertex', 'Horizon', 'Apex', 'Zenith']
 CLIENT_SUFFIXES = ['Solutions', 'Systems', 'Technologies', 'Enterprises', 'Industries', 'Dynamics', 'Innovations', 'Global', 'Networks', 'Partners']
 
+# Creates probabilistic assignment option for client size. 
 CLIENT_SIZE_CONFIG = {
     "Small": {
         "business_scale_range": (0.5, 0.9),
