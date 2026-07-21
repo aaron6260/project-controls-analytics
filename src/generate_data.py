@@ -9,15 +9,15 @@ from tkinter.font import names
 import numpy as np
 import pandas as pd
 
-from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, END_YEAR, RANDOM_SEED, SIMULATION_DATE, PLANNING_HORIZON_MONTHS
+from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, RANDOM_SEED, SIMULATION_DATE, PLANNING_HORIZON_MONTHS
 from config.clients import INDUSTRY_CONFIG, CLIENT_PREFIXES, CLIENT_SUFFIXES, CLIENT_SIZE_CONFIG
-from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS, STATUS_DISTRIBUTION
+from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS
 
 ## Setting deterministic randomness for reproducability
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
-def generate_dates(duration_months=1):
+def generate_project_dates(duration_months=1):
     """
     Generate random start and end dates.
     Parameters
@@ -70,6 +70,8 @@ def generate_clients(num_clients=NUM_CLIENTS):
     clients_df = pd.DataFrame(data)
     # assign a business scaling factor for each client to be used later based on their size.
     clients_df['business_scale'] = clients_df.apply(lambda row: random.uniform(*CLIENT_SIZE_CONFIG[row['client_size']]['business_scale_range']), axis=1)
+    # ------------ Validation ------------
+    assert len(clients_df) == num_clients
     return clients_df
 
 def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
@@ -100,7 +102,10 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     start_date_list = list()
     end_date_list = list()
     status_list = list()
-    # Assign a random template to each project based on the industry of the client. 
+    region_list = list()
+    state_list = list()
+    # Generate a project and add to project_df. 
+    # Assign a random template to each project based on the industry of the client and derive needed values for DataFrame. 
     for industry in projects_df['industry']:
         available_templates = PROJECT_CATALOG[industry]
         project_type = random.choice(list(available_templates.keys()))
@@ -109,11 +114,7 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
         project_type_list.append(project_type)
         original_budget_list.append(original_budget)
         duration_months_list.append(duration_months)
-    projects_df['project_type'] = project_type_list
-    projects_df['original_budget'] = original_budget_list
-    projects_df['duration_months'] = duration_months_list
-    for duration in projects_df['duration_months']:
-        start_date, end_date = generate_dates(duration)
+        start_date, end_date = generate_project_dates(duration_months)
         start_date_list.append(start_date)
         end_date_list.append(end_date)
         if start_date > SIMULATION_DATE.date():
@@ -122,8 +123,19 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
             status_list.append('Completed')
         else:
             status_list.append('Active')
-    projects_df['start_date'], projects_df['end_date'], projects_df['status'] = start_date_list, end_date_list, status_list
-    # Sanity checks
+        project_region = random.choice(list(REGIONS.keys()))
+        project_state = random.choice(list(REGIONS[project_region]))
+        region_list.append(project_region)
+        state_list.append(project_state)
+    projects_df['project_type'] = project_type_list
+    projects_df['original_budget'] = original_budget_list
+    projects_df['duration_months'] = duration_months_list
+    projects_df['start_date'], projects_df['end_date'] = start_date_list, end_date_list
+    projects_df['status'] = status_list
+    projects_df['region'] = region_list
+    projects_df['state'] = state_list
+    # ------------ Validation ------------
+    assert projects_df['client_id'].isin(clients_df['client_id']).all()
     assert len(projects_df) == num_projects
     assert (projects_df['end_date'] >= projects_df['start_date']).all()
     assert projects_df['duration_months'].between(3, 60).all()
@@ -146,7 +158,6 @@ def main():
     print(clients.head())
     projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
     print(projects.head())
-    generate_dates()
 #    generate_monthly_costs()
 #    generate_change_orders()
 #    generate_forecast_history()

@@ -34,13 +34,6 @@ REGIONS = {
     ],
 }
 
-STATUS_DISTRIBUTION = {
-    "Planning": 0.05,
-    "Active": 0.35,
-    "Complete": 0.55,
-    "On Hold": 0.05,
-}
-
 PROJECT_MANAGERS = {
     "Alice Johnson": 1.0,
     "Michael Chen": 2.0,
