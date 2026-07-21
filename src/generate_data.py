@@ -9,7 +9,7 @@ from tkinter.font import names
 import numpy as np
 import pandas as pd
 
-from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, END_YEAR, RANDOM_SEED, SIMULATION_DATE
+from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, END_YEAR, RANDOM_SEED, SIMULATION_DATE, PLANNING_HORIZON_MONTHS
 from config.clients import INDUSTRY_CONFIG, CLIENT_PREFIXES, CLIENT_SUFFIXES, CLIENT_SIZE_CONFIG
 from config.projects import PROJECT_CATALOG, REGIONS, PROJECT_MANAGERS, STATUS_DISTRIBUTION
 
@@ -32,7 +32,8 @@ def generate_dates(duration_months=1):
 
     """
     min_date = datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d")
-    max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
+    #max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
+    max_date = SIMULATION_DATE + relativedelta(months=PLANNING_HORIZON_MONTHS) #Updated to have future planned projects
     delta_total = max_date - min_date
     random_start_days = random.randint(0, delta_total.days)
     start_date = min_date + timedelta(days=random_start_days)
@@ -112,7 +113,7 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
         end_date_list.append(end_date)
     projects_df['start_date'], projects_df['end_date'] = start_date_list, end_date_list
     # Sanity checks
-    assert len(projects_df) == NUM_PROJECTS
+    assert len(projects_df) == num_projects
     assert (projects_df['end_date'] >= projects_df['start_date']).all()
     assert projects_df['duration_months'].between(3, 60).all()
     return projects_df
