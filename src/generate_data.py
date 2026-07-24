@@ -149,12 +149,15 @@ def generate_project_timeline(project_row):
         - start_date
         - duration_months
     """
-    #assert project_row['project_id'] is not []
+    # Sanity check of data input. 
+    assert pd.notna(project_row['project_id'])
+    assert pd.notna(project_row['start_date'])
+    assert project_row['duration_months'] > 0
+
     project_id = project_row['project_id']
     start_date = project_row['start_date']
+    normalized_start_month = pd.Timestamp(f'{start_date.year}-{start_date.month}-1')    # Normalize date to beginning of month for reporting periods. 
     duration_months = project_row['duration_months']
-    reporting_month = start_date
-    month_number = 1
     timeline_records = {
         'project_id': [],
         'reporting_month': [],
@@ -163,13 +166,13 @@ def generate_project_timeline(project_row):
         'planned_progress': []
     }
     for month_number in range(1, duration_months+1):
-        reporting_month = start_date + relativedelta(months=month_number)
-        project_progress = month_number/duration_months
+        reporting_month = normalized_start_month + relativedelta(months=month_number)
+        planned_progress = month_number/duration_months
         timeline_records['project_id'].append(project_id)
         timeline_records['reporting_month'].append(reporting_month)
         timeline_records['month_number'].append(month_number)
         timeline_records['duration_months'].append(duration_months)
-        timeline_records['planned_progress'].append(project_progress)
+        timeline_records['planned_progress'].append(planned_progress)
     timeline_df = pd.DataFrame(timeline_records)
     return timeline_df
 
@@ -198,7 +201,7 @@ def main():
     #print(projects.head())
     project = pd.Series({
     'project_id': 'P001',
-    'start_date': pd.Timestamp('2025-01-01'),
+    'start_date': pd.Timestamp('2025-01-21'),
     'duration_months': 6
     })
 

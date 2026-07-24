@@ -27,3 +27,5 @@ Project Root/
 |- requirements.txt                 # Necessary Python libraries
 
 ## 2. High-Level System Diagram 
+
+generate_clients() -> generate_projects() -> generate_project_timeline()
