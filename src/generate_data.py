@@ -66,7 +66,6 @@ def generate_project_dates(duration_months=1):
 
     """
     min_date = datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d")
-    #max_date = datetime.strptime(f"{END_YEAR}-12-31", "%Y-%m-%d")
     max_date = SIMULATION_DATE + relativedelta(months=PLANNING_HORIZON_MONTHS) #Updated to have future planned projects
     delta_total = max_date - min_date
     random_start_days = random.randint(0, delta_total.days)
@@ -141,9 +140,38 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     assert projects_df['duration_months'].between(3, 60).all()
     return projects_df
 
-def generate_project_schedule(start_date=datetime.strptime(f"{START_YEAR}-1-1", "%Y-%m-%d"), duration=1):
-    
-    pass
+def generate_project_timeline(project_row):
+    """
+    Generate the monthly reporting timeline for a single project.
+
+    Required project fields:
+        - project_id
+        - start_date
+        - duration_months
+    """
+    #assert project_row['project_id'] is not []
+    project_id = project_row['project_id']
+    start_date = project_row['start_date']
+    duration_months = project_row['duration_months']
+    reporting_month = start_date
+    month_number = 1
+    timeline_records = {
+        'project_id': [],
+        'reporting_month': [],
+        'month_number': [],
+        'duration_months': [],
+        'planned_progress': []
+    }
+    for month_number in range(1, duration_months+1):
+        reporting_month = start_date + relativedelta(months=month_number)
+        project_progress = month_number/duration_months
+        timeline_records['project_id'].append(project_id)
+        timeline_records['reporting_month'].append(reporting_month)
+        timeline_records['month_number'].append(month_number)
+        timeline_records['duration_months'].append(duration_months)
+        timeline_records['planned_progress'].append(project_progress)
+    timeline_df = pd.DataFrame(timeline_records)
+    return timeline_df
 
 def generate_monthly_costs(project_df=None, cost_var=0.10):
     assert not project_df['project_id'].empty
@@ -164,10 +192,20 @@ def save_csvs():
     pass
 
 def main():
-    clients = generate_clients(num_clients=NUM_CLIENTS)
-    print(clients.head())
-    projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
-    print(projects.head())
+    #clients = generate_clients(num_clients=NUM_CLIENTS)
+    #print(clients.head())
+    #projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
+    #print(projects.head())
+    project = pd.Series({
+    'project_id': 'P001',
+    'start_date': pd.Timestamp('2025-01-01'),
+    'duration_months': 6
+    })
+
+    timeline = generate_project_timeline(project)
+    print(timeline)
+    assert len(timeline) == 6
+    assert timeline['month_number'].iloc[-1] == 6
 #    generate_monthly_costs()
 #    generate_change_orders()
 #    generate_forecast_history()

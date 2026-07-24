@@ -20,3 +20,7 @@ Where should leadership focus attention?
 The toolkit should work regardless of the month's data.
 
 This is the business problem we're solving.
+
+## Assumptions
+Projects can start on any day of the calendar year. 
+Partial months at project start and completion are approximated as full reporting periods. 
