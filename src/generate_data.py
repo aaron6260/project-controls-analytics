@@ -86,7 +86,8 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     Returns
     -------
     pandas.DataFrame
-        DataFrame contains project IDs, client IDs, industries, project type, original budget, duration in months, start_date, end_date, status
+        DataFrame contains project information from a template. 
+        project IDs, client IDs, industries, project type, original budget, duration in months, proj start date, proj end date, status, region, state
     """
     data = {
         'project_id': range(1, num_projects + 1),
@@ -143,21 +144,32 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
 def generate_project_timeline(project_row):
     """
     Generate the monthly reporting timeline for a single project.
-
+    Parameters
+    ----------
+    project_row: pd.Series or one row of a pd.DataFrame 
+        One row from project_df.
     Required project fields:
         - project_id
         - start_date
         - duration_months
+    
+    Returns
+    -------
+    pandas.DataFrame
+        Dataframe with project timeline information for a single project ID. 
+        Project ID, reporting month, month number, duration months, planned progress.
     """
     # Sanity check of data input. 
     assert pd.notna(project_row['project_id'])
     assert pd.notna(project_row['start_date'])
     assert project_row['duration_months'] > 0
 
+    # Create variables from inputs. 
     project_id = project_row['project_id']
     start_date = project_row['start_date']
     normalized_start_month = pd.Timestamp(f'{start_date.year}-{start_date.month}-1')    # Normalize date to beginning of month for reporting periods. 
     duration_months = project_row['duration_months']
+    # Timeline dictionary for monthly records. 
     timeline_records = {
         'project_id': [],
         'reporting_month': [],
@@ -165,6 +177,7 @@ def generate_project_timeline(project_row):
         'duration_months': [],
         'planned_progress': []
     }
+    # Generate timeline for a single project. Iterate through each month in the project. 
     for month_number in range(1, duration_months+1):
         reporting_month = normalized_start_month + relativedelta(months=month_number)
         planned_progress = month_number/duration_months
@@ -186,6 +199,9 @@ def calculate_cumulative_costs():
     pass
 
 def generate_monthly_costs(project_df=None, cost_var=0.10):
+    """
+    Generate monthly planned and actual costs for all projects. 
+    """
     assert not project_df['project_id'].empty
     assert not project_df['duration_months'].empty
     project_ids = []
