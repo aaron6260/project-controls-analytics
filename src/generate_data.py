@@ -176,6 +176,15 @@ def generate_project_timeline(project_row):
     timeline_df = pd.DataFrame(timeline_records)
     return timeline_df
 
+def generate_planned_burn_curve(timeline_df):
+    pass
+
+def generate_actual_costs(timeline_df):
+    pass
+
+def calculate_cumulative_costs():
+    pass
+
 def generate_monthly_costs(project_df=None, cost_var=0.10):
     assert not project_df['project_id'].empty
     assert not project_df['duration_months'].empty
