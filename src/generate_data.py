@@ -4,10 +4,9 @@
 import random 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from tkinter.font import names
-
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from config.general import NUM_CLIENTS, NUM_PROJECTS, START_YEAR, RANDOM_SEED, SIMULATION_DATE, PLANNING_HORIZON_MONTHS
 from config.clients import INDUSTRY_CONFIG, CLIENT_PREFIXES, CLIENT_SUFFIXES, CLIENT_SIZE_CONFIG
@@ -189,25 +188,80 @@ def generate_project_timeline(project_row):
     timeline_df = pd.DataFrame(timeline_records)
     return timeline_df
 
-def generate_planned_burn_curve(timeline_df):
-    pass
+def generate_planned_burn_curve(timeline_df=None, curve_type="standard"):
+     # Sanity check of data input. 
+   # assert pd.notna(timeline_df['month_number'])
+   # assert pd.notna(timeline_df['planned_progress'])
+   # assert curve_type == "standard"
 
-def generate_actual_costs(timeline_df):
-    pass
+    planned_progress = timeline_df['planned_progress']
+    mu = 0.5  # mean (average)
+    sigma = 0.15   # standard deviation
+    burn_curve = stats.norm.pdf(planned_progress, mu, sigma)
+    burn_weights = burn_curve / burn_curve.sum()
+    timeline_df['burn_weights'] = burn_weights
+    return timeline_df
 
-def calculate_cumulative_costs():
-    pass
+def generate_actual_costs(timeline_df=None, cost_var=0.10):
+    actual_costs = []
+    row_num = 0
+    for reporting_month in timeline_df['reporting_month']:
+        planned_cost = timeline_df['planned_cost'][row_num]
+        if reporting_month <= SIMULATION_DATE:
+            actual_cost = planned_cost * (random.uniform(0, 2)*cost_var-cost_var+1)
+            actual_costs.append(actual_cost)
+        else:
+            actual_costs.append(0)
+        row_num += 1
+    timeline_df['actual_cost'] = actual_costs
+    return timeline_df
+
+def calculate_cumulative_costs(timeline_df=None):
+    planned_costs = timeline_df['planned_cost']
+    actual_costs = timeline_df['actual_cost']
+    cumulative_planned_cost = 0
+    cumulative_actual_cost = 0
+    cumulative_planned_costs = []
+    cumulative_actual_costs = []
+    row_num = 0
+    for reporting_month in timeline_df['reporting_month']:
+        planned_cost = timeline_df['planned_cost'][row_num]
+        cumulative_planned_cost += planned_cost
+        cumulative_planned_costs.append(cumulative_planned_cost)
+        if reporting_month <= SIMULATION_DATE:
+            actual_cost = timeline_df['actual_cost'][row_num]
+            cumulative_actual_cost += actual_cost
+            cumulative_actual_costs.append(cumulative_actual_cost)
+        else:
+            cumulative_actual_costs.append(0)
+        row_num += 1
+    timeline_df['cumulative_planned_cost'] = cumulative_planned_costs
+    timeline_df['cumulative_actual_cost'] = cumulative_actual_costs
+    return timeline_df
 
 def generate_monthly_costs(project_df=None, cost_var=0.10):
     """
     Generate monthly planned and actual costs for all projects. 
     """
-    assert not project_df['project_id'].empty
-    assert not project_df['duration_months'].empty
-    project_ids = []
-    for project in project_df['project_id']:
-            temp_date = project_df['start_date']
+    #assert not project_df['project_id'].empty
+    #assert not project_df['duration_months'].empty
 
+    project = pd.DataFrame({
+        'project_id': ['P001'],
+        'start_date': [pd.Timestamp('2025-01-21')],
+        'duration_months': [18],
+        'original_budget': [1000000]
+        })
+    
+    timeline = generate_project_timeline(project.iloc[0])
+    #assert len(timeline) == project['duration_months'].max
+    #assert timeline['month_number'].iloc[-1] == 6
+    timeline = generate_planned_burn_curve(timeline_df=timeline)
+    timeline_planned_cost = timeline.merge(project[['project_id', 'original_budget']], on='project_id', how='left')
+    timeline_planned_cost['planned_cost'] = timeline_planned_cost['original_budget'] * timeline_planned_cost['burn_weights']
+    timeline_actual_cost = generate_actual_costs(timeline_df=timeline_planned_cost)
+    timeline_cumulative_cost = calculate_cumulative_costs(timeline_df=timeline_actual_cost)
+    print(timeline_cumulative_cost[['planned_cost', 'cumulative_planned_cost', 'actual_cost', 'cumulative_actual_cost']])
     pass
 
 def generate_change_orders():
@@ -224,17 +278,7 @@ def main():
     #print(clients.head())
     #projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
     #print(projects.head())
-    project = pd.Series({
-    'project_id': 'P001',
-    'start_date': pd.Timestamp('2025-01-21'),
-    'duration_months': 6
-    })
-
-    timeline = generate_project_timeline(project)
-    print(timeline)
-    assert len(timeline) == 6
-    assert timeline['month_number'].iloc[-1] == 6
-#    generate_monthly_costs()
+    generate_monthly_costs()
 #    generate_change_orders()
 #    generate_forecast_history()
 #    save_csvs()
