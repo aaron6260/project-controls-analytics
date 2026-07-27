@@ -217,26 +217,8 @@ def generate_actual_costs(timeline_df=None, cost_var=0.10):
     return timeline_df
 
 def calculate_cumulative_costs(timeline_df=None):
-    planned_costs = timeline_df['planned_cost']
-    actual_costs = timeline_df['actual_cost']
-    cumulative_planned_cost = 0
-    cumulative_actual_cost = 0
-    cumulative_planned_costs = []
-    cumulative_actual_costs = []
-    row_num = 0
-    for reporting_month in timeline_df['reporting_month']:
-        planned_cost = timeline_df['planned_cost'][row_num]
-        cumulative_planned_cost += planned_cost
-        cumulative_planned_costs.append(cumulative_planned_cost)
-        if reporting_month <= SIMULATION_DATE:
-            actual_cost = timeline_df['actual_cost'][row_num]
-            cumulative_actual_cost += actual_cost
-            cumulative_actual_costs.append(cumulative_actual_cost)
-        else:
-            cumulative_actual_costs.append(0)
-        row_num += 1
-    timeline_df['cumulative_planned_cost'] = cumulative_planned_costs
-    timeline_df['cumulative_actual_cost'] = cumulative_actual_costs
+    timeline_df['cumulative_planned_cost'] = timeline_df['planned_cost'].cumsum()
+    timeline_df['cumulative_actual_cost'] = timeline_df['actual_cost'].cumsum()
     return timeline_df
 
 def generate_monthly_costs(project_df=None, cost_var=0.10):
@@ -247,21 +229,20 @@ def generate_monthly_costs(project_df=None, cost_var=0.10):
     #assert not project_df['duration_months'].empty
 
     project = pd.DataFrame({
-        'project_id': ['P001'],
-        'start_date': [pd.Timestamp('2025-01-21')],
-        'duration_months': [18],
-        'original_budget': [1000000]
+        'project_id': ['P001', 'P002'],
+        'start_date': [pd.Timestamp('2025-01-21'), pd.Timestamp('2025-07-14')],
+        'duration_months': [18, 6],
+        'original_budget': [1000000, 500000]
         })
-    
-    timeline = generate_project_timeline(project.iloc[0])
-    #assert len(timeline) == project['duration_months'].max
-    #assert timeline['month_number'].iloc[-1] == 6
-    timeline = generate_planned_burn_curve(timeline_df=timeline)
-    timeline_planned_cost = timeline.merge(project[['project_id', 'original_budget']], on='project_id', how='left')
-    timeline_planned_cost['planned_cost'] = timeline_planned_cost['original_budget'] * timeline_planned_cost['burn_weights']
-    timeline_actual_cost = generate_actual_costs(timeline_df=timeline_planned_cost)
-    timeline_cumulative_cost = calculate_cumulative_costs(timeline_df=timeline_actual_cost)
-    print(timeline_cumulative_cost[['planned_cost', 'cumulative_planned_cost', 'actual_cost', 'cumulative_actual_cost']])
+    for row in range(len(project['project_id'])):
+        timeline = generate_project_timeline(project.iloc[row])
+        #assert len(timeline) == project['duration_months'].max
+        #assert timeline['month_number'].iloc[-1] == 6
+        timeline = generate_planned_burn_curve(timeline_df=timeline)
+        timeline['planned_cost'] = project['original_budget'][0] * timeline['burn_weights']
+        timeline_actual_cost = generate_actual_costs(timeline_df=timeline)
+        timeline_cumulative_cost = calculate_cumulative_costs(timeline_df=timeline_actual_cost)
+        print(timeline_cumulative_cost[['planned_cost', 'cumulative_planned_cost', 'actual_cost', 'cumulative_actual_cost']])
     pass
 
 def generate_change_orders():
