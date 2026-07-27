@@ -28,9 +28,28 @@ Project Root/
 
 ## 2. High-Level System Diagram 
 
-generate_clients() -> generate_projects() -> generate_monthly_costs()
-
-generate_project_dates() -> generate_projects()
-
-generate_project_timeline() -> generate_planned_burn_curve -> calculate_cumulative_costs() -> generate_monthly_costs()
-                            |-> generate_actual_costs      |
+Clients
+    │
+    ▼
+Project Dates
+    │
+    ▼
+Projects
+    │
+    ▼
+Project Timeline
+    │
+    ▼
+Apply Burn Curve
+    │
+    ▼
+Calculate Planned Costs
+    │
+    ▼
+Simulate Actual Costs
+    │
+    ▼
+Calculate Cumulative Costs
+    │
+    ▼
+Monthly Cost Table

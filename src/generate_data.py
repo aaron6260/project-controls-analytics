@@ -188,11 +188,24 @@ def generate_project_timeline(project_row):
     timeline_df = pd.DataFrame(timeline_records)
     return timeline_df
 
-def generate_planned_burn_curve(timeline_df=None, curve_type="standard"):
-     # Sanity check of data input. 
-   # assert pd.notna(timeline_df['month_number'])
-   # assert pd.notna(timeline_df['planned_progress'])
-   # assert curve_type == "standard"
+def apply_planned_burn_curve(timeline_df):  #TODO: add ability to do different burn curves (e.g. standard, front loaded, back loaded, etc.)
+    """
+    Apply a project burn curve for a single project.
+    Parameters
+    ----------
+    timeline_df: pd.DataFrame of project timeline. 
+        DataFrame of a single projects monthly timeline. 
+    Required project fields:
+        - planned_progress
+    
+    Returns
+    -------
+    pandas.DataFrame
+        Dataframe with project timeline and burn curve weights added. 
+        Project ID, reporting month, month number, duration months, planned progress, burn weights.
+    """
+    # Sanity check of data input. 
+    #assert pd.notna(timeline_df['planned_progress'])
 
     planned_progress = timeline_df['planned_progress']
     mu = 0.5  # mean (average)
@@ -202,12 +215,37 @@ def generate_planned_burn_curve(timeline_df=None, curve_type="standard"):
     timeline_df['burn_weights'] = burn_weights
     return timeline_df
 
-def generate_actual_costs(timeline_df=None, cost_var=0.10):
+def simulate_actual_costs(timeline_df, cost_var=0.10, simulation_date=SIMULATION_DATE):       #TODO: add total project variance along with monthly noise. This creates a more realistic swing for costs. 
+    """
+    Simulate actual costs for a single project.
+    Parameters
+    ----------
+    timeline_df: pd.DataFrame of project timeline. 
+        DataFrame of monthly costs for single project with burn weigthts applied.
+    cost_var: decimal
+        Decimal for total cost variance on a project. Default 10%.
+    simulation_date: date
+        Date of the simulation, default using global SIMULATION_DATE from general.py
+    
+    Required project fields:
+        - reporting_month
+        - planned_cost
+    
+    Returns
+    -------
+    pandas.DataFrame
+        Dataframe with project timeline information for a single project ID. 
+        Project ID, reporting month, month number, duration months, planned progress, burn weights, planned cost, actual_cost
+    """
+    # Sanity check of data input
+    #assert pd.notna(timeline_df['reporting_month'])
+    #assert pd.notna(timeline_df['planned_cost'])
+
     actual_costs = []
     row_num = 0
     for reporting_month in timeline_df['reporting_month']:
         planned_cost = timeline_df['planned_cost'][row_num]
-        if reporting_month <= SIMULATION_DATE:
+        if reporting_month <= simulation_date:
             actual_cost = planned_cost * (random.uniform(0, 2)*cost_var-cost_var+1)
             actual_costs.append(actual_cost)
         else:
@@ -216,34 +254,73 @@ def generate_actual_costs(timeline_df=None, cost_var=0.10):
     timeline_df['actual_cost'] = actual_costs
     return timeline_df
 
-def calculate_cumulative_costs(timeline_df=None):
+def calculate_cumulative_costs(timeline_df):
+    """
+    Calculate cumulative costs for a single project.
+    Parameters
+    ----------
+    timeline_df: pd.DataFrame of project timeline. 
+        DataFrame of monthly costs for single project with burn weigthts applied.
+    Required project fields:
+        - planned_cost
+        - actual_cost
+
+    Returns
+    -------
+    pandas.DataFrame
+        Dataframe with project timeline information for a single project ID. 
+        Project ID, reporting month, month number, duration months, planned progress, burn weights, planned cost, actual_cost, cumulative planned cost, cumulative actual cost
+    """
+    # Sanity check of data input
+    #assert pd.notna(timeline_df['actual_cost'])
+    #assert pd.notna(timeline_df['planned_cost'])
+    
     timeline_df['cumulative_planned_cost'] = timeline_df['planned_cost'].cumsum()
     timeline_df['cumulative_actual_cost'] = timeline_df['actual_cost'].cumsum()
     return timeline_df
 
-def generate_monthly_costs(project_df=None, cost_var=0.10):
+def generate_monthly_costs(project_df): 
     """
-    Generate monthly planned and actual costs for all projects. 
-    """
-    #assert not project_df['project_id'].empty
-    #assert not project_df['duration_months'].empty
+    Generate total monthly costs for a single project.
+    Parameters
+    ----------
+    project_df: one row from a pd.DataFrame for a single project. 
+        One row from a DataFrame with all project information for a single project.
+    Required project fields:
+        - project_id
+        - duration_months
+        - original_budget
 
-    project = pd.DataFrame({
-        'project_id': ['P001', 'P002'],
-        'start_date': [pd.Timestamp('2025-01-21'), pd.Timestamp('2025-07-14')],
-        'duration_months': [18, 6],
-        'original_budget': [1000000, 500000]
-        })
-    for row in range(len(project['project_id'])):
-        timeline = generate_project_timeline(project.iloc[row])
-        #assert len(timeline) == project['duration_months'].max
-        #assert timeline['month_number'].iloc[-1] == 6
-        timeline = generate_planned_burn_curve(timeline_df=timeline)
-        timeline['planned_cost'] = project['original_budget'][0] * timeline['burn_weights']
-        timeline_actual_cost = generate_actual_costs(timeline_df=timeline)
+    Returns
+    -------
+    pandas.DataFrame
+        Dataframe with project timeline information for a single project ID. 
+        Project ID, reporting month, month number, duration months, planned progress, burn weights, planned cost, actual_cost, cumulative planned cost, cumulative actual cost
+    """
+    # Sanity check of data input
+    #assert pd.notna(project_df['project_id'])
+    #assert pd.notna(project_df['duration_months'])
+    #assert pd.notna(project_df['original_budget'])
+
+#    project_df = pd.DataFrame({
+#        'project_id': ['P001', 'P002'],
+#        'start_date': [pd.Timestamp('2025-01-21'), pd.Timestamp('2025-07-14')],
+#        'duration_months': [18, 6],
+#        'original_budget': [1000000, 500000]
+#        })
+
+    monthly_cost_tables = []
+    for row in range(len(project_df['project_id'])):
+        timeline = generate_project_timeline(project_df.iloc[row])
+        #assert len(timeline) == project_df['duration_months'].max   # check timeline DataFrame generated correctly from project data. 
+        #assert timeline['month_number'].iloc[-1] == project_df['duration_months'].max
+        timeline = apply_planned_burn_curve(timeline_df=timeline)
+        timeline['planned_cost'] = project_df['original_budget'][0] * timeline['burn_weights']
+        timeline_actual_cost = simulate_actual_costs(timeline_df=timeline)
         timeline_cumulative_cost = calculate_cumulative_costs(timeline_df=timeline_actual_cost)
-        print(timeline_cumulative_cost[['planned_cost', 'cumulative_planned_cost', 'actual_cost', 'cumulative_actual_cost']])
-    pass
+        monthly_cost_tables.append(timeline_cumulative_cost)
+    monthly_costs_df = pd.concat(monthly_cost_tables, ignore_index=True)
+    return monthly_costs_df
 
 def generate_change_orders():
     pass
@@ -255,11 +332,10 @@ def save_csvs():
     pass
 
 def main():
-    #clients = generate_clients(num_clients=NUM_CLIENTS)
-    #print(clients.head())
-    #projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
-    #print(projects.head())
-    generate_monthly_costs()
+    clients = generate_clients(num_clients=NUM_CLIENTS)
+    projects = generate_projects(num_projects=NUM_PROJECTS, clients_df=clients)
+    monthly_costs = generate_monthly_costs(project_df=projects)
+    print(monthly_costs.head())
 #    generate_change_orders()
 #    generate_forecast_history()
 #    save_csvs()
