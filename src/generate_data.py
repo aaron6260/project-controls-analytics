@@ -95,14 +95,16 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
     }
     projects_df = pd.DataFrame(data)
     projects_df = projects_df.merge(clients_df[['client_id', 'industry']], on='client_id', how='left')
-    project_type_list = []  #will need to refactor multiple lists into one dictionary when it makes sense. 
-    original_budget_list = []
-    duration_months_list = []
-    start_date_list = []
-    end_date_list = []
-    status_list = []
-    region_list = []
-    state_list = []
+    project_data = {
+        'project_types': [],  
+        'original_budgets': [],
+        'duration_months': [],
+        'start_dates': [],
+        'end_dates': [],
+        'status': [],
+        'regions': [],
+        'states': []
+    }
     # Generate a project and add to project_df. 
     # Assign a random template to each project based on the industry of the client and derive needed values for DataFrame. 
     for industry in projects_df['industry']:
@@ -110,29 +112,29 @@ def generate_projects(num_projects=NUM_PROJECTS, clients_df=None):
         project_type = random.choice(list(available_templates.keys()))
         original_budget = random.uniform(*available_templates[project_type]['budget_range'])
         duration_months = random.randint(*available_templates[project_type]['duration_months_range'])
-        project_type_list.append(project_type)
-        original_budget_list.append(original_budget)
-        duration_months_list.append(duration_months)
+        project_data['project_types'].append(project_type)
+        project_data['original_budgets'].append(original_budget)
+        project_data['duration_months'].append(duration_months)
         start_date, end_date = generate_project_dates(duration_months)
-        start_date_list.append(start_date)
-        end_date_list.append(end_date)
+        project_data['start_dates'].append(start_date)
+        project_data['end_dates'].append(end_date)
         if start_date > SIMULATION_DATE.date():
-            status_list.append('Planned')
+            project_data['status'].append('Planned')
         elif end_date <= SIMULATION_DATE.date():
-            status_list.append('Completed')
+            project_data['status'].append('Completed')
         else:
-            status_list.append('Active')
+            project_data['status'].append('Active')
         project_region = random.choice(list(REGIONS.keys()))
         project_state = random.choice(list(REGIONS[project_region]))
-        region_list.append(project_region)
-        state_list.append(project_state)
-    projects_df['project_type'] = project_type_list
-    projects_df['original_budget'] = original_budget_list
-    projects_df['duration_months'] = duration_months_list
-    projects_df['start_date'], projects_df['end_date'] = start_date_list, end_date_list
-    projects_df['status'] = status_list
-    projects_df['region'] = region_list
-    projects_df['state'] = state_list
+        project_data['regions'].append(project_region)
+        project_data['states'].append(project_state)
+    projects_df['project_type'] = project_data['project_types']
+    projects_df['original_budget'] = project_data['original_budgets']
+    projects_df['duration_months'] = project_data['duration_months']
+    projects_df['start_date'], projects_df['end_date'] = project_data['start_dates'], project_data['end_dates']
+    projects_df['status'] = project_data['status']
+    projects_df['region'] = project_data['regions']
+    projects_df['state'] = project_data['states']
     # ------------ Validation ------------
     assert projects_df['client_id'].isin(clients_df['client_id']).all()
     assert len(projects_df) == num_projects
@@ -301,13 +303,6 @@ def generate_monthly_costs(project_df):
     #assert pd.notna(project_df['project_id'])
     #assert pd.notna(project_df['duration_months'])
     #assert pd.notna(project_df['original_budget'])
-
-#    project_df = pd.DataFrame({
-#        'project_id': ['P001', 'P002'],
-#        'start_date': [pd.Timestamp('2025-01-21'), pd.Timestamp('2025-07-14')],
-#        'duration_months': [18, 6],
-#        'original_budget': [1000000, 500000]
-#        })
 
     monthly_cost_tables = []
     for row in range(len(project_df['project_id'])):
