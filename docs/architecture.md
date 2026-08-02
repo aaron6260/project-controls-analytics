@@ -18,16 +18,21 @@ Project Root/
 |- reports/
 |- src/
 |   |- config/
-|   |   |- 
-|- tests/
-|   |- template_test.py             
+|   |   |- clients.py               # Includes information needed to generate a list of simulated clients 
+|   |   |- general.py               # Specifies general information for simulated data
+|   |   |- projects.py              # Specifies data needed to generate projects. Includes a catalog of projects, regions, and project managers 
+|   |- cleaning.py
+|   |- generate_data.py
+|   |- metrics.py
+|   |- visualizations.py 
+|- tests/                           # Folder for tests and practice files              
 |- .gitignore                       # Speciifies intentionally ugracked files to ignore
 |- LICENSE                          
 |- README.md                        # Project Overview and quick start guide
 |- requirements.txt                 # Necessary Python libraries
 
 ## 2. High-Level System Diagram 
-
+### generate_data.py 
 Clients
     │
     ▼
